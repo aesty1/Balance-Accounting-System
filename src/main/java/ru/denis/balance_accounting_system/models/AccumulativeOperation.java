@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.context.annotation.Lazy;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -20,6 +21,9 @@ public class AccumulativeOperation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
     private Account account;
+
+    @Column(name = "amount", precision = 15, scale = 2)
+    private BigDecimal amount;
 
     @Column(name = "description")
     private String description;
