@@ -1,4 +1,15 @@
 services:
+  activemq:
+    image: rmohr/activemq:latest
+    container_name: activemq
+    ports:
+      - "8161:8161"
+      - "61616:61616"
+    environment:
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
+    volumes:
+      - activemq_data:/opt/activemq/data
   mysql:
     image: mysql:latest
     container_name: balance_db_container
@@ -15,12 +26,15 @@ services:
     container_name: balance_app
     depends_on:
       - mysql
+      - activemq
     ports:
       - "8084:8080"
     environment:
+
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/balance_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: denis123
 
 volumes:
+  activemq_data:
   balance_db_data:
