@@ -16,4 +16,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT COUNT(t) > 0 FROM Transaction t WHERE t.referenceId = :referenceId")
     boolean existsByReferenceId(@Param("referenceId") String referenceId);
+
+    void deleteByReferenceId(String referenceId);
 }

@@ -54,7 +54,7 @@ public class AccountController {
     }
 
     @PostMapping("/{accountId}/accumulative/calculate")
-    public ResponseEntity<BigDecimal> calculateComplexAccumulative(@PathVariable Long accountId, @RequestBody CalculationRequest request) {
+    public ResponseEntity<BigDecimal> calculateComplexAccumulative(@RequestBody CalculationRequest request) {
         BigDecimal result = accumulativeOperationService.calculateComplexAccumulative(
                 request.getBaseAmount(),
                 request.getRate(),
@@ -71,5 +71,6 @@ public class AccountController {
 
         return ResponseEntity.ok(operations);
     }
+
 
 }

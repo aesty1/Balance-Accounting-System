@@ -33,6 +33,28 @@ public class BalanceService {
         return performTransaction(account_id, request, OperationType.EXPENSE);
     }
 
+    @Transactional
+    public void removeOperation(String referenceId) {
+
+        if(referenceId == null || !transactionRepository.existsByReferenceId(referenceId)) {
+            throw new IllegalArgumentException("Reference id not found");
+        }
+
+        transactionRepository.deleteByReferenceId(referenceId);
+    }
+
+    @Transactional
+    public void editOperation(String referenceId, TransactionRequest request) {
+        Transaction transaction = transactionRepository.findByReferenceId(referenceId).orElseThrow(() ->
+                new EntityNotFoundException("Reference id not found"));
+
+        transaction.setDescription(request.getDescription());
+        transaction.setAmount(request.getAmount());
+        transaction.setReferenceId(request.getReferenceId());
+
+        transactionRepository.save(transaction);
+    }
+
     private TransactionResponse performTransaction(Long accountId, TransactionRequest request, OperationType operationType) {
         if(transactionRepository.existsByReferenceId(request.getReferenceId()) && request.getReferenceId() != null) {
             throw new IllegalArgumentException("Transaction already exists");
