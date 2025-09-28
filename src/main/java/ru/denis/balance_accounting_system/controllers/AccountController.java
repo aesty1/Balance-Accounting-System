@@ -2,6 +2,7 @@ package ru.denis.balance_accounting_system.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.web.bind.annotation.*;
 import ru.denis.balance_accounting_system.dto.*;
 import ru.denis.balance_accounting_system.models.AccumulativeOperation;
@@ -21,7 +22,17 @@ public class AccountController {
     @Autowired
     private AccumulativeOperationService accumulativeOperationService;
 
+    @Autowired
+    private JmsTemplate jmsTemplate;
+
     // Приход/расход (базовые операции)
+
+    @GetMapping("/{accountId}/balance")
+    public ResponseEntity<BigDecimal> getBalance(@PathVariable Long accountId) {
+        BigDecimal balance = balanceService.getBalance(accountId);
+
+        return ResponseEntity.ok(balance);
+    }
 
     @PostMapping("/{accountId}/income")
     public ResponseEntity<TransactionResponse> addIncome(@PathVariable Long accountId, @RequestBody TransactionRequest request) {
@@ -35,13 +46,6 @@ public class AccountController {
         TransactionResponse response = balanceService.addExpense(accountId, request);
 
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/{accountId}/balance")
-    public ResponseEntity<BigDecimal> getBalance(@PathVariable Long accountId) {
-        BigDecimal balance = balanceService.getBalance(accountId);
-
-        return ResponseEntity.ok(balance);
     }
 
     // Накопительное списание
