@@ -76,5 +76,11 @@ public class AccountController {
         return ResponseEntity.ok(operations);
     }
 
+    @GetMapping("/{accountId}/balance/{period}")
+    public ResponseEntity<OperationSummaryDTO> getTransactionSummaryByPeriod(@PathVariable Long accountId, @PathVariable String period) {
+        OperationSummaryDTO operation = balanceService.getOperationsSummary(accountId, period);
+
+        return ResponseEntity.ok(operation);
+    }
 
 }

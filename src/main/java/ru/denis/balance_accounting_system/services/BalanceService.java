@@ -4,15 +4,18 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.denis.balance_accounting_system.dto.OperationType;
-import ru.denis.balance_accounting_system.dto.TransactionRequest;
-import ru.denis.balance_accounting_system.dto.TransactionResponse;
+import ru.denis.balance_accounting_system.dto.*;
 import ru.denis.balance_accounting_system.models.Account;
 import ru.denis.balance_accounting_system.models.Transaction;
 import ru.denis.balance_accounting_system.repositories.AccountRepository;
 import ru.denis.balance_accounting_system.repositories.TransactionRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class BalanceService {
@@ -106,6 +109,42 @@ public class BalanceService {
                 new EntityNotFoundException("Account not found"));
 
         return account.getBalance();
+    }
+
+    public OperationSummaryDTO getOperationsSummary(Long accountId, String period) {
+        LocalDateTime periodDate = parsePeriodDate(period);
+        YearMonth yearMonth = YearMonth.from(periodDate);
+
+        LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
+        LocalDateTime endDate = yearMonth.atEndOfMonth().atStartOfDay();
+
+
+        BigDecimal totalAmountCalculated = transactionRepository
+                .sumAmountByAccountAndPeriod(accountId, startDate, endDate);
+
+
+        long operationCount = transactionRepository
+                .countByAccountIdAndPeriodDateBetween(accountId, startDate, endDate);
+
+        return new OperationSummaryDTO(
+                accountId,
+                period,
+                totalAmountCalculated,
+                operationCount
+        );
+    }
+
+    private LocalDateTime parsePeriodDate(String period) {
+        if(period == null || period.isEmpty()) {
+            return LocalDateTime.now().withDayOfMonth(1);
+        }
+
+        try {
+            YearMonth yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("yyyy-MM"));
+            return yearMonth.atEndOfMonth().atTime(23, 59, 59);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid period format. Use YYYY-MM");
+        }
     }
 
 }

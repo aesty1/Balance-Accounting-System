@@ -7,6 +7,9 @@ import ru.denis.balance_accounting_system.models.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -18,4 +21,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     boolean existsByReferenceId(@Param("referenceId") String referenceId);
 
     void deleteByReferenceId(String referenceId);
+
+    @Query(value = "SELECT COUNT(*) FROM transactions a WHERE a.account_id = :accountId AND a.operation_date BETWEEN :startDate AND :endDate",
+            nativeQuery = true)
+    long countByAccountIdAndPeriodDateBetween(@Param("accountId") Long accountId,
+                                              @Param("startDate") LocalDateTime startDate,
+                                              @Param("endDate") LocalDateTime endDate);
+
+    @Query(value = "SELECT COALESCE(SUM(a.amount), 0) FROM transactions a WHERE a.account_id = :accountId AND a.operation_date BETWEEN :startDate AND :endDate",
+            nativeQuery = true)
+    BigDecimal sumAmountByAccountAndPeriod(@Param("accountId") Long accountId,
+                                           @Param("startDate") LocalDateTime startDate,
+                                           @Param("endDate") LocalDateTime endDate);
 }

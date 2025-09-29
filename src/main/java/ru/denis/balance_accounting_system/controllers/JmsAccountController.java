@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.denis.balance_accounting_system.broker_services.MessageSender;
+import ru.denis.balance_accounting_system.dto.AccumulativeRequest;
+import ru.denis.balance_accounting_system.dto.AccumulativeResponse;
 import ru.denis.balance_accounting_system.dto.JmsTransactionRequest;
 
 @RestController
@@ -33,5 +35,19 @@ public class JmsAccountController {
         );
 
         return ResponseEntity.ok("Expense transaction sent to queue for account: " + accountId);
+    }
+
+    @PostMapping("/{accountId}/accumulative")
+    public ResponseEntity<String> processAccumulative(@PathVariable Long accountId, @RequestBody AccumulativeRequest request) {
+        messageSender.sendAccumulativeOpeation(
+                accountId,
+                request.getAmount(),
+                request.getDescription(),
+                request.getPeriod(),
+                request.getReferenceId()
+
+        );
+
+        return ResponseEntity.ok("Accumulative transaction send to queue.");
     }
 }

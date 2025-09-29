@@ -9,10 +9,10 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AccumulativeRequest {
-    private Long account_id;
-    private BigDecimal amount;
-    private String description;
+public class OperationSummaryDTO {
+
+    private Long accountId;
     private String period;
-    private String referenceId;
+    private BigDecimal totalAmountCalculated;
+    private long operationCount;
 }

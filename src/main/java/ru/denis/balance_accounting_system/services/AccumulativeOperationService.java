@@ -177,7 +177,5 @@ public class AccumulativeOperationService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid period format. Use YYYY-MM");
         }
-
-
     }
 }
