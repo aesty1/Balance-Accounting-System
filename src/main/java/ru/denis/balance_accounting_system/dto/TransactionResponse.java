@@ -19,4 +19,7 @@ public class TransactionResponse {
     private String description;
     private LocalDateTime operationDate;
     private BigDecimal newBalance;
+
+
+
 }

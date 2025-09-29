@@ -16,6 +16,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BalanceService {
@@ -126,11 +129,29 @@ public class BalanceService {
         long operationCount = transactionRepository
                 .countByAccountIdAndPeriodDateBetween(accountId, startDate, endDate);
 
+        List<Transaction> transactions = transactionRepository.findByAccountIdAndPeriod(accountId, startDate, endDate);
+
+        List<TransactionResponse> response = transactions.stream()
+                .map(transaction -> new TransactionResponse(
+                        transaction.getId(),
+                        transaction.getAccount().getId(),
+                        transaction.getAmount(),
+                        transaction.getOperationType().toString(),
+                        transaction.getDescription(),
+                        transaction.getOperationDate(),
+                        transaction.getAccount().getBalance()
+                ))
+                .toList();
+
+
+
         return new OperationSummaryDTO(
                 accountId,
                 period,
                 totalAmountCalculated,
-                operationCount
+                operationCount,
+                response
+
         );
     }
 
