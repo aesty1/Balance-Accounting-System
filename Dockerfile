@@ -3,7 +3,7 @@ WORKDIR /app
 COPY build.gradle .
 COPY settings.gradle .
 COPY src ./src
-RUN gradle clean build -x test
+RUN gradle clean build -x test --info
 
 FROM openjdk:21-oracle
 WORKDIR /app

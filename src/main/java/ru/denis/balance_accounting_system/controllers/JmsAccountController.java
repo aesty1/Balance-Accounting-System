@@ -38,7 +38,7 @@ public class JmsAccountController {
     }
 
     @PostMapping("/{accountId}/accumulative")
-    public ResponseEntity<String> processAccumulative(@PathVariable Long accountId, @RequestBody AccumulativeRequest request) {
+    public ResponseEntity<?> processAccumulative(@PathVariable Long accountId, @RequestBody AccumulativeRequest request) {
         messageSender.sendAccumulativeOpeation(
                 accountId,
                 request.getAmount(),
@@ -48,6 +48,6 @@ public class JmsAccountController {
 
         );
 
-        return ResponseEntity.ok("Accumulative transaction send to queue.");
+        return ResponseEntity.ok("Accumulative transaction send to queue for account.");
     }
 }

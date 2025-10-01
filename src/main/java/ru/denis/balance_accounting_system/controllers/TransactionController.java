@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.denis.balance_accounting_system.dto.TransactionRequest;
+import ru.denis.balance_accounting_system.services.ArchiveService;
 import ru.denis.balance_accounting_system.services.BalanceService;
 
 @RestController
@@ -12,6 +13,9 @@ public class TransactionController {
 
     @Autowired
     private BalanceService balanceService;
+
+    @Autowired
+    private ArchiveService archiveService;
 
     @DeleteMapping("/{referenceId}")
     public ResponseEntity<?> removeOperation(@PathVariable String referenceId) {
@@ -25,5 +29,12 @@ public class TransactionController {
         balanceService.editOperation(referenceId, request);
 
         return ResponseEntity.ok("Operation successfully edited");
+    }
+
+    @PostMapping("/archive")
+    public ResponseEntity<?> archiveTransactions() {
+        archiveService.archiveOldData();
+
+        return ResponseEntity.ok("Old transactions successfully archived");
     }
 }
