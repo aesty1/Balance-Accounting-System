@@ -4,8 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.denis.balance_accounting_system.dto.TransactionRequest;
+import ru.denis.balance_accounting_system.dto.TransactionResponse;
+import ru.denis.balance_accounting_system.dynamic_repositories.TransactionDynamicRepository;
+import ru.denis.balance_accounting_system.models.Transaction;
 import ru.denis.balance_accounting_system.services.ArchiveService;
 import ru.denis.balance_accounting_system.services.BalanceService;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -16,6 +22,9 @@ public class TransactionController {
 
     @Autowired
     private ArchiveService archiveService;
+
+    @Autowired
+    private TransactionDynamicRepository transactionDynamicRepository;
 
     @DeleteMapping("/{referenceId}")
     public ResponseEntity<?> removeOperation(@PathVariable String referenceId) {
@@ -37,4 +46,14 @@ public class TransactionController {
 
         return ResponseEntity.ok("Old transactions successfully archived");
     }
+
+    @GetMapping("/{date}")
+    public ResponseEntity<List<Transaction>> getMonthTransaction(@PathVariable String date) {
+        LocalDate localDate = LocalDate.parse(date);
+
+        List<Transaction> transactions = transactionDynamicRepository.findByMonth(localDate);
+
+        return ResponseEntity.ok(transactions);
+    }
+    
 }

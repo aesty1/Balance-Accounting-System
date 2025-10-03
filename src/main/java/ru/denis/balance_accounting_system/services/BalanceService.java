@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.denis.balance_accounting_system.dto.*;
+import ru.denis.balance_accounting_system.dynamic_repositories.TransactionDynamicRepository;
 import ru.denis.balance_accounting_system.models.Account;
 import ru.denis.balance_accounting_system.models.ArchiveTransaction;
 import ru.denis.balance_accounting_system.models.Transaction;
@@ -30,6 +31,9 @@ public class BalanceService {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private TransactionDynamicRepository transactionDynamicRepository;
 
     @Autowired
     private ArchiveTransactionRepository archiveTransactionRepository;
@@ -85,7 +89,7 @@ public class BalanceService {
         transaction.setDescription(request.getDescription());
         transaction.setReferenceId(request.getReferenceId());
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionDynamicRepository.save(transaction);
 
         updateAccountBalance(account, request.getAmount(), operationType);
 
