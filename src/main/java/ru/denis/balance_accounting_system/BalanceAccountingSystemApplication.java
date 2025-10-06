@@ -6,6 +6,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ru.denis.balance_accounting_system.controllers.JmsAccountController;
+import ru.denis.balance_accounting_system.dto.JmsTransactionRequest;
 
 import java.math.BigDecimal;
 import java.util.concurrent.Executors;
@@ -19,7 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BalanceAccountingSystemApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BalanceAccountingSystemApplication.class, args);
+		ConfigurableApplicationContext context = SpringApplication.run(BalanceAccountingSystemApplication.class, args);
+
 	}
 
 }

@@ -6,8 +6,10 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.web.bind.annotation.*;
 import ru.denis.balance_accounting_system.dto.*;
 import ru.denis.balance_accounting_system.models.AccumulativeOperation;
+import ru.denis.balance_accounting_system.models.ReserveFund;
 import ru.denis.balance_accounting_system.services.AccumulativeOperationService;
 import ru.denis.balance_accounting_system.services.BalanceService;
+import ru.denis.balance_accounting_system.services.ReserveFundService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,7 +25,7 @@ public class AccountController {
     private AccumulativeOperationService accumulativeOperationService;
 
     @Autowired
-    private JmsTemplate jmsTemplate;
+    private ReserveFundService reserveFundService;
 
     // Приход/расход (базовые операции)
 
@@ -32,6 +34,13 @@ public class AccountController {
         BigDecimal balance = balanceService.getBalance(accountId);
 
         return ResponseEntity.ok(balance);
+    }
+
+    @GetMapping("/{accountId}/balance/{periodStart}/{periodEnd}")
+    public ResponseEntity<OperationSummaryDTO> getTransactionSummaryByPeriod(@PathVariable Long accountId, @PathVariable String periodStart, @PathVariable String periodEnd) {
+        OperationSummaryDTO operation = balanceService.getOperationsSummary(accountId, periodStart, periodEnd);
+
+        return ResponseEntity.ok(operation);
     }
 
     @PostMapping("/{accountId}/income")
@@ -76,11 +85,26 @@ public class AccountController {
         return ResponseEntity.ok(operations);
     }
 
-    @GetMapping("/{accountId}/balance/{period}")
-    public ResponseEntity<OperationSummaryDTO> getTransactionSummaryByPeriod(@PathVariable Long accountId, @PathVariable String period) {
-        OperationSummaryDTO operation = balanceService.getOperationsSummary(accountId, period);
+    // Резервный фонд
 
-        return ResponseEntity.ok(operation);
+    @GetMapping("/{accountId}/reserve")
+    public ResponseEntity<List<ReserveFundResponse>> getReserveFund(@PathVariable Long accountId) {
+        List<ReserveFundResponse> reserveFundList =  reserveFundService.getAllById(accountId);
+
+        return ResponseEntity.ok(reserveFundList);
     }
 
+    @PostMapping("/{accountId}/reserve/income")
+    public ResponseEntity<String> reserveFundIncome(@PathVariable Long accountId, @RequestBody TransactionRequest request) {
+        reserveFundService.addReserveIncome(accountId, request);
+
+        return ResponseEntity.ok("Income transaction to reserve fund sent");
+    }
+
+    @PostMapping("/{accountId}/reserve/expense")
+    public ResponseEntity<String> reserveFundExpense(@PathVariable Long accountId, @RequestBody TransactionRequest request) {
+        reserveFundService.addReserveExpense(accountId, request);
+
+        return ResponseEntity.ok("Expense transaction to reserve fund sent");
+    }
 }

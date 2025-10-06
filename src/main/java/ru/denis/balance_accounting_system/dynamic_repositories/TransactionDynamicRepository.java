@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -103,6 +104,54 @@ public class TransactionDynamicRepository {
             transaction.setCreatedAt(
                     rs.getTimestamp("created_at").toLocalDateTime()
             );
+            return transaction;
+        });
+    }
+
+    public List<Transaction> findByPeriod(LocalDate startDate, LocalDate endDate) {
+        List<String> tableQueries = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        LocalDate currentMonth = startDate.withDayOfMonth(1);
+        LocalDate endMonth = endDate.withDayOfMonth(1);
+
+        while(!currentMonth.isAfter(endMonth)) {
+            String tableName = getTableName(currentMonth);
+            createMonthlyTable(currentMonth);
+
+            LocalDateTime monthStart = currentMonth.atStartOfDay();
+            LocalDateTime monthEnd = currentMonth.plusMonths(1).atStartOfDay().minusNanos(1);
+
+            LocalDateTime filterStart = currentMonth.equals(startDate.withDayOfMonth(1)) ? startDate.atStartOfDay() : monthStart;
+            LocalDateTime filterEnd = currentMonth.equals(endDate.withDayOfMonth(1)) ? endDate.atTime(23, 59, 59, 99999999) : monthEnd;
+
+            tableQueries.add(String.format(
+                    "SELECT * FROM %s WHERE operation_date >= ? AND operation_date <= ?",
+                    tableName));
+
+            params.add(filterStart);
+            params.add(filterEnd);
+
+            currentMonth = currentMonth.plusMonths(1);
+        }
+
+        if(tableQueries.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String unionSql = String.join(" UNION ALL ", tableQueries) + " ORDER BY operation_date";
+
+        return jdbcTemplate.query(unionSql, params.toArray(), (rs, rowNum) -> {
+            Transaction transaction = new Transaction();
+            transaction.setId(rs.getLong("id"));
+            transaction.setAccount(accountRepository.findByIdWithLock(rs.getLong("account_id")).orElseThrow(() ->
+                    new EntityNotFoundException("Account not found")));
+            transaction.setAmount(rs.getBigDecimal("amount"));
+            transaction.setOperationType(OperationType.valueOf(rs.getString("operation_type")));
+            transaction.setDescription(rs.getString("description"));
+            transaction.setReferenceId(rs.getString("reference_id"));
+            transaction.setOperationDate(rs.getTimestamp("operation_date").toLocalDateTime());
+            transaction.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
             return transaction;
         });
     }

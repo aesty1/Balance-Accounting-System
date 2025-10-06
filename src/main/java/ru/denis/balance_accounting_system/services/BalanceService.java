@@ -21,6 +21,7 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -123,74 +124,47 @@ public class BalanceService {
         return account.getBalance();
     }
 
-    public OperationSummaryDTO getOperationsSummary(Long accountId, String period) {
-        LocalDateTime periodDate = parsePeriodDate(period);
-        YearMonth yearMonth = YearMonth.from(periodDate);
+    public OperationSummaryDTO getOperationsSummary(Long accountId, String dateStartText, String dateEndText) {
+        YearMonth startYearMonth = YearMonth.parse(dateStartText);
+        YearMonth endYearMonth = YearMonth.parse(dateEndText);
 
-        LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
-        LocalDateTime endDate = yearMonth.atEndOfMonth().atStartOfDay();
-
-
+        LocalDate startDate = startYearMonth.atDay(1);
+        LocalDate endDate = endYearMonth.atEndOfMonth();
 
 
-        if(!transactionRepository.findByAccountIdAndPeriod(accountId, startDate, endDate).isEmpty()) {
-            BigDecimal totalAmountCalculated = transactionRepository
-                    .sumAmountByAccountAndPeriod(accountId, startDate, endDate);
+        List<Transaction> transactions = transactionDynamicRepository.findByPeriod(startDate, endDate);
 
-            long operationCount = transactionRepository
-                    .countByAccountIdAndPeriodDateBetween(accountId, startDate, endDate);
-
-            List<Transaction> transactions = transactionRepository.findByAccountIdAndPeriod(accountId, startDate, endDate);
-
-            List<TransactionResponse> response = transactions.stream()
-                    .map(transaction -> new TransactionResponse(
-                            transaction.getId(),
-                            transaction.getAccount().getId(),
-                            transaction.getAmount(),
-                            transaction.getOperationType().toString(),
-                            transaction.getDescription(),
-                            transaction.getOperationDate(),
-                            transaction.getAccount().getBalance()
-                    ))
-                    .toList();
-
-            return new OperationSummaryDTO(
-                    accountId,
-                    period,
-                    totalAmountCalculated,
-                    operationCount,
-                    response
-
-            );
-        } else {
-            BigDecimal totalAmountCalculated = archiveTransactionRepository.sumAmountByAccountAndPeriod(accountId, startDate, endDate);
-
-            long operationCount = archiveTransactionRepository
-                    .countByAccountIdAndPeriodDateBetween(accountId, startDate, endDate);
-
-            List<ArchiveTransaction> transactions = archiveTransactionRepository.findByAccountIdAndPeriod(accountId, startDate, endDate);
-
-            List<TransactionResponse> response = transactions.stream()
-                    .map(transaction -> new TransactionResponse(
-                            transaction.getId(),
-                            transaction.getAccount().getId(),
-                            transaction.getAmount(),
-                            transaction.getOperationType().toString(),
-                            transaction.getDescription(),
-                            transaction.getOperationDate(),
-                            transaction.getAccount().getBalance()
-                    ))
-                    .toList();
-
-            return new OperationSummaryDTO(
-                    accountId,
-                    period,
-                    totalAmountCalculated,
-                    operationCount,
-                    response
-
-            );
+        if(transactions.isEmpty()) {
+            return new OperationSummaryDTO();
         }
+
+        BigDecimal totalAmountCalculated = transactions.stream()
+                .map(Transaction::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        long operationCount = transactions.size();
+
+        List<TransactionResponse> response = transactions.stream()
+                    .map(transaction -> new TransactionResponse(
+                            transaction.getId(),
+                            transaction.getAccount().getId(),
+                            transaction.getAmount(),
+                            transaction.getOperationType().toString(),
+                            transaction.getDescription(),
+                            transaction.getOperationDate(),
+                            transaction.getAccount().getBalance()
+                    ))
+                    .toList();
+
+        return new OperationSummaryDTO(
+                    accountId,
+                    totalAmountCalculated,
+                    operationCount,
+                    response
+
+        );
+
+
     }
 
     private LocalDateTime parsePeriodDate(String period) {

@@ -14,7 +14,6 @@ import java.util.List;
 public class OperationSummaryDTO {
 
     private Long accountId;
-    private String period;
     private BigDecimal totalAmountCalculated;
     private long operationCount;
     private List<TransactionResponse> transactions;
