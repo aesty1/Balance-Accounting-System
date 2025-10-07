@@ -90,9 +90,16 @@ public class AccountController {
 
     @GetMapping("/{accountId}/reserve")
     public ResponseEntity<List<ReserveFundResponse>> getReserveFund(@PathVariable Long accountId) {
-        List<ReserveFundResponse> reserveFundList =  reserveFundService.getAllById(accountId);
+        List<ReserveFundResponse> reserveFundList = reserveFundService.getAllById(accountId);
 
         return ResponseEntity.ok(reserveFundList);
+    }
+
+    @GetMapping("/{accountId}/reserve/{periodStart}/{periodEnd}")
+    public ResponseEntity<ReserveFundSummaryDTO> getReserveFundSummaryByPeriod(@PathVariable Long accountId, @PathVariable String periodStart, @PathVariable String periodEnd) {
+        ReserveFundSummaryDTO operation = reserveFundService.getReserveFundSummary(accountId, periodStart, periodEnd);
+
+        return ResponseEntity.ok(operation);
     }
 
     @PostMapping("/{accountId}/reserve/income")
