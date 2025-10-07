@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.denis.balance_accounting_system.dto.*;
 import ru.denis.balance_accounting_system.models.AccumulativeOperation;
 import ru.denis.balance_accounting_system.models.ReserveFund;
+import ru.denis.balance_accounting_system.models.Transaction;
 import ru.denis.balance_accounting_system.services.AccumulativeOperationService;
 import ru.denis.balance_accounting_system.services.BalanceService;
 import ru.denis.balance_accounting_system.services.ReserveFundService;
@@ -106,5 +107,12 @@ public class AccountController {
         reserveFundService.addReserveExpense(accountId, request);
 
         return ResponseEntity.ok("Expense transaction to reserve fund sent");
+    }
+
+    @PostMapping("/{accountId}/reserve/back")
+    public ResponseEntity<String> reserveFundBack(@PathVariable Long accountId, @RequestBody TransactionRequest request) {
+        reserveFundService.returnReserve(accountId, request);
+
+        return ResponseEntity.ok("Reserve fund money successfully returned to balance");
     }
 }

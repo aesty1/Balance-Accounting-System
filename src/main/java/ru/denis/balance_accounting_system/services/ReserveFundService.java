@@ -11,7 +11,9 @@ import ru.denis.balance_accounting_system.models.ReserveFund;
 import ru.denis.balance_accounting_system.repositories.AccountRepository;
 import ru.denis.balance_accounting_system.repositories.ReserveFundRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ReserveFundService {
@@ -38,6 +40,22 @@ public class ReserveFundService {
         reserveFund.setAmount(request.getAmount());
         reserveFund.setDescription(request.getDescription());
         reserveFund.setReferenceId(request.getReferenceId());
+
+        reserveFundRepository.save(reserveFund);
+    }
+
+    public void returnReserve(Long accountId, TransactionRequest request) {
+        Account account = accountRepository.findByIdWithLock(accountId).orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
+        ReserveFund reserveFund = reserveFundRepository.findByAccountIdAndReferenceId(account, request.getReferenceId()).orElseThrow(() -> new EntityNotFoundException("Reserve fund not found"));
+
+        if(reserveFund.getAmount().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException("Reserve fund dont have too much money");
+        }
+        request.setReferenceId(request.getReferenceId() + UUID.randomUUID().toString().substring(0, 2));
+        balanceService.addIncome(accountId, request);
+
+        reserveFund.setAmount(reserveFund.getAmount().subtract(request.getAmount()));
 
         reserveFundRepository.save(reserveFund);
     }
