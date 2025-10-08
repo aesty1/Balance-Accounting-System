@@ -35,6 +35,44 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: denis123
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: balance_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - balance_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: balance_grafana
+    ports:
+        - "3000:3000"
+    environment:
+        - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+        - ./grafana/provisioning:/etc/grafana/provisioning
+        - grafana_data:/var/lib/grafana
+    depends_on:
+        - prometheus
+    networks:
+        - balance_network
 volumes:
   activemq_data:
   balance_db_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  balance_network:
+    driver: bridge

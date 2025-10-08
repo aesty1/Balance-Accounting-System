@@ -1,9 +1,11 @@
 package ru.denis.balance_accounting_system.services;
 
+import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.denis.balance_accounting_system.configs.BalanceMetrics;
 import ru.denis.balance_accounting_system.dto.*;
 import ru.denis.balance_accounting_system.models.Account;
 import ru.denis.balance_accounting_system.models.AccumulativeOperation;
@@ -28,45 +30,58 @@ public class AccumulativeOperationService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private BalanceMetrics balanceMetrics;
+
     @Transactional
     public AccumulativeResponse processAccumulativeOperation(Long accountId, AccumulativeRequest request) {
-        if(request.getReferenceId() != null && accumulativeOperationRepository.existsByReferenceId(request.getReferenceId())) {
-            throw new IllegalArgumentException("Accumulative operation already exists");
+        Timer.Sample sample = balanceMetrics.startAccumulativeTimer();
+        try {
+
+            if(request.getReferenceId() != null && accumulativeOperationRepository.existsByReferenceId(request.getReferenceId())) {
+                throw new IllegalArgumentException("Accumulative operation already exists");
+            }
+
+            Account account = accountRepository.findByIdWithLock(accountId).orElseThrow(() ->
+                    new EntityNotFoundException("Account not found"));
+
+            BigDecimal amountCheck = request.getAmount().setScale(2, RoundingMode.HALF_UP);
+            if(account.getBalance().compareTo(amountCheck) < 0) {
+                throw new IllegalArgumentException("Insufficient funds for accumulative operation.");
+            }
+
+            LocalDate periodDate = parsePeriodDate(request.getPeriod());
+
+            AccumulativeOperation operation = new AccumulativeOperation();
+            operation.setAccount(account);
+            operation.setDescription(request.getDescription());
+            operation.setPeriodDate(periodDate);
+            operation.setReferenceId(request.getReferenceId());
+            operation.setAmount(request.getAmount());
+
+            AccumulativeOperation savedOperation = accumulativeOperationRepository.save(operation);
+
+            BigDecimal amountToDeduct = request.getAmount().setScale(2, RoundingMode.HALF_UP);
+            account.setBalance(account.getBalance().subtract(amountToDeduct));
+            account.setVersion(account.getVersion() + 1);
+
+            Account updatedAccount = accountRepository.save(account);
+
+
+            balanceMetrics.incrementAccumulativeTransactions();
+
+            return new AccumulativeResponse (
+                    savedOperation.getId(),
+                    accountId,
+                    request.getAmount(),
+                    request.getDescription(),
+                    periodDate,
+                    updatedAccount.getBalance()
+            );
+        } finally {
+            balanceMetrics.stopAccumulativeTimer(sample);
         }
 
-        Account account = accountRepository.findByIdWithLock(accountId).orElseThrow(() ->
-                new EntityNotFoundException("Account not found"));
-
-        BigDecimal amountCheck = request.getAmount().setScale(2, RoundingMode.HALF_UP);
-        if(account.getBalance().compareTo(amountCheck) < 0) {
-            throw new IllegalArgumentException("Insufficient funds for accumulative operation.");
-        }
-
-        LocalDate periodDate = parsePeriodDate(request.getPeriod());
-
-        AccumulativeOperation operation = new AccumulativeOperation();
-        operation.setAccount(account);
-        operation.setDescription(request.getDescription());
-        operation.setPeriodDate(periodDate);
-        operation.setReferenceId(request.getReferenceId());
-        operation.setAmount(request.getAmount());
-
-        AccumulativeOperation savedOperation = accumulativeOperationRepository.save(operation);
-
-        BigDecimal amountToDeduct = request.getAmount().setScale(2, RoundingMode.HALF_UP);
-        account.setBalance(account.getBalance().subtract(amountToDeduct));
-        account.setVersion(account.getVersion() + 1);
-
-        Account updatedAccount = accountRepository.save(account);
-
-        return new AccumulativeResponse (
-                savedOperation.getId(),
-                accountId,
-                request.getAmount(),
-                request.getDescription(),
-                periodDate,
-                updatedAccount.getBalance()
-        );
     }
 
 

@@ -1,9 +1,11 @@
 package ru.denis.balance_accounting_system.services;
 
+import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.denis.balance_accounting_system.configs.BalanceMetrics;
 import ru.denis.balance_accounting_system.dto.*;
 import ru.denis.balance_accounting_system.dynamic_repositories.TransactionDynamicRepository;
 import ru.denis.balance_accounting_system.models.Account;
@@ -37,16 +39,32 @@ public class BalanceService {
     private TransactionDynamicRepository transactionDynamicRepository;
 
     @Autowired
-    private ArchiveTransactionRepository archiveTransactionRepository;
+    private BalanceMetrics balanceMetrics;
 
     @Transactional
     public TransactionResponse addIncome(Long account_id, TransactionRequest request) {
-        return performTransaction(account_id, request, OperationType.INCOME);
+        Timer.Sample sample = balanceMetrics.startIncomeTimer();
+        try {
+            TransactionResponse response = performTransaction(account_id, request, OperationType.INCOME);
+            balanceMetrics.incrementIncomeTransactions();
+            return response;
+        } finally {
+            balanceMetrics.stopIncomeTimer(sample);
+        }
     }
 
     @Transactional
     public TransactionResponse addExpense(Long account_id, TransactionRequest request) {
-        return performTransaction(account_id, request, OperationType.EXPENSE);
+        Timer.Sample sample = balanceMetrics.startExpenseTimer();
+        try {
+
+            TransactionResponse response = performTransaction(account_id, request, OperationType.EXPENSE);
+            balanceMetrics.incrementExpenseTransactions();
+            return response;
+        } finally {
+            System.out.println("EXPENSE");
+            balanceMetrics.stopExpenseTimer(sample);
+        }
     }
 
     @Transactional
