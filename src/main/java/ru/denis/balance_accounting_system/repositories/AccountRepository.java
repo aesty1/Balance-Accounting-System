@@ -1,6 +1,10 @@
 package ru.denis.balance_accounting_system.repositories;
 
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import ru.denis.balance_accounting_system.models.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,8 +16,8 @@ import java.util.Optional;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
-    @Query("SELECT a FROm Account a WHERE a.id = :id")
-    Optional<Account> findByIdWithLock(@Param("id") Long id);
+    @Query(value = "SELECT * FROM accounts WHERE id = ? FOR UPDATE", nativeQuery = true)
+    Optional<Account> findByIdWithLock(Long id);
 
 
 }

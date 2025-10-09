@@ -4,6 +4,9 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import ru.denis.balance_accounting_system.configs.BalanceMetrics;
 import ru.denis.balance_accounting_system.dto.*;
@@ -89,7 +92,9 @@ public class BalanceService {
         transactionRepository.save(transaction);
     }
 
-    private TransactionResponse performTransaction(Long accountId, TransactionRequest request, OperationType operationType) {
+    @Retryable(value = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
+    @Transactional
+    protected TransactionResponse performTransaction(Long accountId, TransactionRequest request, OperationType operationType) {
         if(transactionRepository.existsByReferenceId(request.getReferenceId()) && request.getReferenceId() != null) {
             throw new IllegalArgumentException("Transaction already exists");
         }

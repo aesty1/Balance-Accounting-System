@@ -26,8 +26,8 @@ public class Account {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Version
-    private Integer version;
+//    @Version
+//    private Integer version;
 
     public Account() {
         this.createdAt = LocalDateTime.now();

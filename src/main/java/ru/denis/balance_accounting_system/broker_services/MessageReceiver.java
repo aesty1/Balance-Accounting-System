@@ -15,6 +15,7 @@ import ru.denis.balance_accounting_system.models.ProcessedMessage;
 import ru.denis.balance_accounting_system.repositories.AccountRepository;
 import ru.denis.balance_accounting_system.repositories.AccumulativeOperationRepository;
 import ru.denis.balance_accounting_system.repositories.ProcessedMessageRepository;
+import ru.denis.balance_accounting_system.services.AccumulativeOperationService;
 import ru.denis.balance_accounting_system.services.BalanceService;
 
 import java.math.BigDecimal;
@@ -34,6 +35,9 @@ public class MessageReceiver {
 
     @Autowired
     private AccumulativeOperationRepository accumulativeOperationRepository;
+
+    @Autowired
+    private AccumulativeOperationService accumulativeService;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -62,6 +66,7 @@ public class MessageReceiver {
                 } else if(message.getOperationType() == OperationType.EXPENSE) {
                     balanceService.addExpense(message.getAccountId(), request);
                 }
+
 
                 saveProcessedMessage(message, "PROCESSED");
             } catch (Exception e) {
@@ -96,7 +101,7 @@ public class MessageReceiver {
 
                 BigDecimal amountToDeduct = message.getAmount().setScale(2, RoundingMode.HALF_UP);
                 account.setBalance(account.getBalance().subtract(amountToDeduct));
-                account.setVersion(account.getVersion() + 1);
+//                account.setVersion(account.getVersion() + 1);
 
                 accountRepository.save(account);
                 balanceMetrics.incrementAccumulativeTransactions();
@@ -105,7 +110,6 @@ public class MessageReceiver {
                 balanceMetrics.stopAccumulativeTimer(sample);
             }
         }
-
     }
 //
 //    @JmsListener(destination = "accumulative.queue")
