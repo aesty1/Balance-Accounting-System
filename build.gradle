@@ -30,7 +30,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-activemq'
 	implementation "com.fasterxml.jackson.core:jackson-databind:2.20.0"
-	implementation("org.springframework.retry:spring-retry:2.0.12")
+	implementation "org.springframework.retry:spring-retry:2.0.12"
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
 	implementation 'org.springframework:spring-jms'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'

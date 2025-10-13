@@ -10,6 +10,9 @@ services:
       - ACTIVEMQ_ADMIN_PASSWORD=admin
     volumes:
       - activemq_data:/opt/activemq/data
+    networks:
+      - balance_network
+
   mysql:
     image: mysql:latest
     container_name: balance_db_container
@@ -20,6 +23,33 @@ services:
       - "3306:3306"
     volumes:
       - balance_db_data:/var/lib/mysql
+    networks:
+      - balance_network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: balance_keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      JAVA_OPTS: "-Xms512m -Xmx1024m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m"
+      JAVA_OPTS_APPEND: "-Djava.awt.headless=true"
+    ports:
+      - "8081:8080"
+    command:
+      - start-dev
+      - --hostname-strict=false
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/realms/balance-realm/.well-known/openid-configuration" ]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+    networks:
+      - balance_network
 
   app:
     build: .
@@ -27,13 +57,16 @@ services:
     depends_on:
       - mysql
       - activemq
+      - keycloak  # добавьте keycloak в depends_on
     ports:
       - "8084:8080"
     environment:
-
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/balance_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: denis123
+      KEYCLOAK_URL: http://keycloak:8080
+    networks:
+      - balance_network
 
   prometheus:
     image: prom/prometheus:latest
@@ -57,16 +90,17 @@ services:
     image: grafana/grafana:latest
     container_name: balance_grafana
     ports:
-        - "3000:3000"
+      - "3000:3000"
     environment:
-        - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-        - ./grafana/provisioning:/etc/grafana/provisioning
-        - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
     depends_on:
-        - prometheus
+      - prometheus
     networks:
-        - balance_network
+      - balance_network
+
 volumes:
   activemq_data:
   balance_db_data:
